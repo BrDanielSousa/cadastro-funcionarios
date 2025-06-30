@@ -1,0 +1,103 @@
+services:
+  # PHP Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: laravel/app
+    container_name: cadastro-funcionario-app
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www:delegated
+      - ./docker_config_files/php/local.ini:/usr/local/etc/php/conf.d/local.ini:delegated
+      - ~/.composer/docker-cache/:/root/.composer:cached
+    networks:
+      - laravel-networks
+
+  # Nginx Service
+  webserver:
+    image: nginx:alpine
+    container_name: cadastro-funcionario-webserver
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www:delegated
+      - ./docker_config_files/nginx/conf.d/:/etc/nginx/conf.d/:delegated
+    networks:
+      - laravel-networks
+    depends_on:
+      - mysql
+      - app
+
+  # Mysql Service
+  mysql:
+    container_name: cadastro-funcionario-mysql
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - laravel-networks
+
+  # Composer
+  composer:
+    build:
+      context: .
+      dockerfile: Dockerfile-composer
+    container_name: cadastro-funcionario-composer
+    volumes:
+      - ./:/var/www/
+    working_dir: /var/www/
+    depends_on:
+      - app
+    networks:
+      - laravel-networks
+
+  # NPM
+  npm:
+    image: node:18
+    container_name: cadastro-funcionario-npm
+    volumes:
+      - ./:/var/www/
+    working_dir: /var/www/
+    entrypoint: [ "npm" ]
+    networks:
+      - laravel-networks
+
+  # Artisan
+  artisan:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cadastro-funcionario-artisan
+    volumes:
+      - ./:/var/www
+    depends_on:
+      - mysql       
+    working_dir: /var/www/
+    entrypoint: [ "php", "/var/www/artisan" ]
+    networks:
+      - laravel-networks
+
+# Docker Networks
+networks:
+  laravel-networks:
+    driver: bridge
+
+# Volumes
+volumes:
+  mysql_data:
+  pgadmin:
+  postgres:
