@@ -40,6 +40,14 @@ Este projeto é uma aplicação web desenvolvida com Laravel + Alpine.js que per
 
 ---
 
+## ⚙️ Para fazer login 
+
+- email = admin@example.com
+- senhar = 123456789
+
+
+---
+
 
 ## ⚙️ Instalação
 
